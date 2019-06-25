@@ -4,12 +4,16 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class StartMenu : MonoBehaviourPunCallbacks {
     public TMP_Text conectionState;
     public TMP_Dropdown dropdown;
-    bool isHost;
-    int playerCount;
+    public bool isHost;
+    public int playerCount;
+    public bool inGame;
+    public bool isServerOn;
+    public bool isPlayerOn;
 
     private void Awake() {
         DontDestroyOnLoad(this);
@@ -25,7 +29,7 @@ public class StartMenu : MonoBehaviourPunCallbacks {
     }
 
     public void Disconnect() {
-        playerCount--;
+        
         Debug.Log("disconectto" + playerCount);
         PhotonNetwork.Disconnect();
     }
@@ -33,12 +37,10 @@ public class StartMenu : MonoBehaviourPunCallbacks {
     public void EnterToServer() {
         //Crear un nuevo server yluego pasar a la escena del juego, usando la cantidad de players que esta ahi
         PhotonNetwork.ConnectUsingSettings();
-        conectionState.gameObject.SetActive(true);
 
 
     }
     public override void OnConnectedToMaster() {
-        playerCount++;
         conectionState.text = "CONECTADO AL SERVER";
         PhotonNetwork.JoinLobby(TypedLobby.Default);
     }
@@ -48,6 +50,7 @@ public class StartMenu : MonoBehaviourPunCallbacks {
     }
 
     public override void OnJoinedLobby() {
+        PhotonNetwork.AutomaticallySyncScene = true;
         conectionState.text = "EN EL LOBBY";
 
         byte b = 0;
@@ -59,12 +62,15 @@ public class StartMenu : MonoBehaviourPunCallbacks {
         if ( isHost ) {
             //Esta es la instancia del juego, en terminos de network no de escenas 
             PhotonNetwork.CreateRoom("MainRoom", new RoomOptions() { MaxPlayers = b });
+            return;
         }
+        else {
+        PhotonNetwork.JoinRandomRoom();
 
+        }
         //recien cuando hay gente los tiras a la room?
 
 
-        PhotonNetwork.JoinRandomRoom();
 
     }
 
@@ -72,13 +78,9 @@ public class StartMenu : MonoBehaviourPunCallbacks {
         conectionState.text = "EN LA HABITACION";
 
         Debug.Log(PhotonNetwork.CurrentRoom.PlayerCount + " ndeah");
-
-        ChangeScene();      //Right?
-        //only the master client may load the level
-
+        /*      //Esto no va aca, pero acordate de esto
         if ( isHost )
-            PhotonNetwork.Instantiate("Server7w7", Vector3.zero, Quaternion.identity);
-        /*
+                    PhotonNetwork.Instantiate("Server7w7", Vector3.zero, Quaternion.identity);
         else
             PhotonNetwork.Instantiate("Person", Vector3.zero, Quaternion.identity);
         */
@@ -93,16 +95,45 @@ public class StartMenu : MonoBehaviourPunCallbacks {
     public override void OnCreatedRoom() {
         conectionState.text = "CREO UNA HABITACION";
     }
-
-    [PunRPC]
-    void ChangeScene() {
-        if ( PhotonNetwork.CurrentRoom.PlayerCount == PhotonNetwork.CurrentRoom.MaxPlayers ) {
-            Debug.Log("CHANGING SCENE REEEEEEE");
-            Server.Instance.StartGame(dropdown.value + 1);
+    private void Update() {
+        //Esto es para cambiar de escena y spawnear los players
+        if (SceneManager.GetActiveScene().name != "Lobby" ) {
+            inGame = true;
         }
 
+
+        if ( inGame == false) {
+            if ( isHost ) {
+                if ( PhotonNetwork.InRoom ) {//Y se cumple esta cosa cambias de escena
+                    playerCount = PhotonNetwork.CurrentRoom.PlayerCount;
+
+                    if ( playerCount == PhotonNetwork.CurrentRoom.MaxPlayers ) {
+                        Debug.Log("CHANGING SCENE REEEEEEE");
+                        PhotonNetwork.LoadLevel(playerCount - 2);
+                        inGame = true;
+                        return;
+                    }
+                }
+            }//si no sos el host, no haces nada
+        } else {//ahora, si hay juego, pues creas el server o el pj
+            if ( isHost == true ) {
+                Debug.Log("es host y hay juego");
+                if ( !isServerOn ) {
+                    Debug.Log("Server creado");
+                    isServerOn = true;
+                    PhotonNetwork.Instantiate("Server7w7", Vector3.right * 2, Quaternion.identity);
+                    return;
+                }
+            } else {
+                if ( isPlayerOn == false) {
+                    Debug.Log("player creado");
+                    isPlayerOn = true;
+                    PhotonNetwork.Instantiate("Person", Vector3.zero, Quaternion.identity);
+                    return;
+                }
+            }
+        }
+
+
     }
-
-
-
 }
