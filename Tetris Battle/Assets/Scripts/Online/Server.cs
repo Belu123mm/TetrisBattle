@@ -10,6 +10,7 @@ public class Server : MonoBehaviourPun {
     public Dictionary<Player, GameManager> managers = new Dictionary<Player, GameManager>();
     PhotonView _view;
     public Player server;
+    public Queue<Vector3> gmpositions = new Queue<Vector3>();
     
     // Start is called before the first frame update
     
@@ -28,12 +29,16 @@ public class Server : MonoBehaviourPun {
             }
 
         }
-        /*else {
+        else {
             Debug.Log("adios");     //nunca entra aca pero igual se destruye el server? 
             PhotonNetwork.Destroy(gameObject);  //Me destrushe
 
         }
-        */
+
+        gmpositions.Enqueue(Vector3.zero);
+        gmpositions.Enqueue(Vector3.right * 5);
+        gmpositions.Enqueue(Vector3.right * 10);
+        gmpositions.Enqueue(Vector3.right * 15); //-dab-
 
     }
 
@@ -42,7 +47,8 @@ public class Server : MonoBehaviourPun {
         Debug.Log("seteando referencia de myself");
         Instance = this;
         server = p;
-        
+
+        DontDestroyOnLoad(this);
         if ( !PhotonNetwork.IsMasterClient )    //Wachin, sos el master?
             {
             Debug.Log("agregando manager");
@@ -56,31 +62,24 @@ public class Server : MonoBehaviourPun {
         Debug.Log("agrego manager");
         if ( !_view.IsMine )
             return;     //Wat is dis?
-        var newPlayer = PhotonNetwork.Instantiate("GameManager",
-                        new Vector3(Random.Range(0, 3),
-                        Random.Range(0, 3),
-                        Random.Range(0, 3)),
+        Debug.Log(p.ActorNumber + " numerito");
+        //Aca tengo que poner el tema ese de visited o no
+        Vector3 newpos = gmpositions.Peek();
+        var newPlayer = PhotonNetwork.Instantiate("GameManager", Vector3.right * p.ActorNumber * 25,
                         Quaternion.identity).GetComponent<GameManager>();
-        managers.Add(p, newPlayer);
+        //Te menti, aca hago lo de la camara
+
         foreach ( var item in managers ) {
+            float n = 1 / (PhotonNetwork.CurrentRoom.MaxPlayers - 2);
             Debug.Log(item);
+            Rect newrect = new Rect(0.5f, (p.ActorNumber - 1) * n, 0.5f, n);
         }
+        managers.Add(p, newPlayer);
     }
     private void OnDestroy() {
         Debug.Log("ME DESTRUSHEN");
     }
 
-    /*
-    [PunRPC] 
-    public void StartGame(int value) {
-        if ( !Instance ) {
-            Awake();
-        }
-        PhotonNetwork.LoadLevel(value + 1);
-        PhotonNetwork.AutomaticallySyncScene = true;    //For some reason,this only happends in the last 
-
-    }
-    */
     // Update is called once per frame
     void Update()
     {/* maybe this goes here?
@@ -93,13 +92,3 @@ public class Server : MonoBehaviourPun {
             */
     }
 }
-/*    [PunRPC]
-    void ChangeScene() {
-        if ( PhotonNetwork.CurrentRoom.PlayerCount == PhotonNetwork.CurrentRoom.MaxPlayers ) {
-            Debug.Log("CHANGING SCENE REEEEEEE");
-            PhotonNetwork.AutomaticallySyncScene = false;    //For some reason,this only happends in the last 
-            PhotonNetwork.LoadLevel(dropdown.value + 1);
-        }
-
-    }
-*/

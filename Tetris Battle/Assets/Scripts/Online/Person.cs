@@ -9,6 +9,7 @@ public class Person : MonoBehaviourPun {
 
     void Start() {
         _view = GetComponent<PhotonView>();
+        //Aca cuando creo el gamemanager y lo linkeo hago lo de las camaras 
     }
 
 
