@@ -51,15 +51,8 @@ public class GameManager : MonoBehaviourPun
         
     }
     public void Start() {
-        Server.Instance.ManagerRequestToStart(PhotonNetwork.LocalPlayer);
     }
 
-    public void StartGame() {
-        Debug.Log("start in manager");
-        Server.Instance.ManagerRequestFactotyPosition(PhotonNetwork.LocalPlayer);
-        Server.Instance.ManagerRequestNewTetraIndex(PhotonNetwork.LocalPlayer);  //Dame un nuevo valor para newtetra, y la queue
-        Server.Instance.ManagerRequestNewTetra(PhotonNetwork.LocalPlayer);
-    }
     //esto se lo pedis al server, pero de ahi veo bien
     public void NewTetraIndex(int r) {
         tetraQueue.Enqueue(r);

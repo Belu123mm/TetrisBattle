@@ -11,6 +11,12 @@ public class Person : MonoBehaviourPun {
     void Start() {
         _view = GetComponent<PhotonView>();
         //Aca cuando creo el gamemanager y lo linkeo hago lo de las camaras 
+        if ( !_view.IsMine )
+            return;
+
+        StartCoroutine(WaitToServer());
+
+
     }
 
 
@@ -33,5 +39,11 @@ public class Person : MonoBehaviourPun {
             Server.Instance.PlayerRequestMoveTetraSide(new Vector3(Input.GetAxisRaw("Horizontal"), 0, 0), PhotonNetwork.LocalPlayer);
         }
     }
+
+    IEnumerator WaitToServer() {
+        yield return new WaitForSeconds(3);
+        Server.Instance.ManagerRequestToStart(PhotonNetwork.LocalPlayer);
+    }
+
 }
 //Correcto

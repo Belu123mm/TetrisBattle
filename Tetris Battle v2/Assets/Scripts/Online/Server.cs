@@ -19,7 +19,7 @@ public class Server : MonoBehaviourPun {
     void Awake()
     {
         _view = GetComponent<PhotonView>();
-        Debug.Log(_view);
+0
 
         if ( !Instance ) {
             if ( _view.IsMine ) {
@@ -64,19 +64,6 @@ public class Server : MonoBehaviourPun {
 
     //Los Ask son rpc
 
-    [PunRPC]
-    void AskStartGame(Player p ) {
-            Debug.Log("starteado");//Correcto, llega aca
-        startedGame = true;
-        
-        if ( _view.IsMine )
-            return;
-            
-        if ( managers.ContainsKey(p)){
-            managers [ p ].StartGame();
-        }
-
-    }
 
     [PunRPC]
     void AsktoMoveTetraSide(Vector3 dir,Player p ) {
@@ -110,6 +97,7 @@ public class Server : MonoBehaviourPun {
     [PunRPC]
     void AskFactoryPosition(Player p) {
         if ( _view.IsMine ) return;
+
         if ( managers.ContainsKey(p) ) {
             managers [ p ].SetStartPosition();
         }
@@ -131,7 +119,18 @@ public class Server : MonoBehaviourPun {
         _view.RPC("AskFactoryPosition", server, p);
     }
     public void ManagerRequestToStart( Player p ) {
-        _view.RPC("AskStartGame", server, p);
+        _view.RPC("AskFactoryPosition", p, p);
+        _view.RPC("AskFactoryPosition", server, p);
+        _view.RPC("AskFactoryPosition", RpcTarget.All, p);
+
+        /*
+        int r = Random.Range(0, 7);
+        _view.RPC("AskNewTetraIndex", p, p, r);
+        _view.RPC("AskNewTetra", p, p);            //CREO
+        _view.RPC("AskNewTetraIndex", RpcTarget.All, p, r);
+        _view.RPC("AskNewTetra", RpcTarget.All, p);            //CREO
+        */
+
 
     }
 
