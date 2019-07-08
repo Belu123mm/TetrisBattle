@@ -127,13 +127,13 @@ void AskFactoryPosition(Player p) {
 
     //Los request no son rpc
     public void PlayerRequestToMoveHorizontal(Vector3 dir,Player p ) {
-        _view.RPC("AskAssemblerToMoveHorizontal", RpcTarget.AllViaServer, dir, p);
+        _view.RPC("AskAssemblerToMoveHorizontal", server, dir, p);
     }
     public void PlayerRequestToMoveVertical( Vector3 dir, Player p ) {
-        _view.RPC("AskAssemblerToMoveVertical", RpcTarget.AllViaServer, dir, p);
+        _view.RPC("AskAssemblerToMoveVertical", server, dir, p);
     }
     public void PlayerRequestToGrab(Player p ) {
-        _view.RPC("AskAssemblerToMoveVertical", RpcTarget.AllViaServer, p);
+        _view.RPC("AskAssemblerToMoveVertical", server, p);
     }
 
 
