@@ -19,7 +19,7 @@ public class Server : MonoBehaviourPun {
     void Awake()
     {
         _view = GetComponent<PhotonView>();
-0
+
 
         if ( !Instance ) {
             if ( _view.IsMine ) {
