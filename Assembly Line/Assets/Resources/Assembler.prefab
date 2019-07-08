@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 6211470666914889719}
   - component: {fileID: 6211470666914889720}
   - component: {fileID: 6211470666914889721}
-  - component: {fileID: 3824845629764102325}
+  - component: {fileID: 2345783431171662724}
   m_Layer: 0
   m_Name: Assembler
   m_TagString: Untagged
@@ -46,7 +46,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 269aff94262421c4c86b2e8dfc69e515, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
+  movementSpeed: 10
+  rotateSpeed: 50
+  direction: {x: 0, y: 0, z: 0}
+  isGrabbin: 0
+  grabbed: {fileID: 0}
+  layers:
+    serializedVersion: 2
+    m_Bits: 1024
 --- !u!114 &6211470666914889721
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -62,14 +69,14 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
-  Synchronization: 0
+  Synchronization: 3
   OwnershipTransfer: 0
   ObservedComponents:
-  - {fileID: 0}
+  - {fileID: 2345783431171662724}
   viewIdField: 0
   InstantiationId: 1
   isRuntimeInstantiated: 0
---- !u!114 &3824845629764102325
+--- !u!114 &2345783431171662724
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

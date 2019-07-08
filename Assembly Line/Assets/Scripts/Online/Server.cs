@@ -11,11 +11,10 @@ public class Server : MonoBehaviourPun {
     public Dictionary<Player, Assembler> assemblers = new Dictionary<Player, Assembler>();
     PhotonView _view;
     public Player server;
-    
+    public bool inGame = false;
     // Start is called before the first frame update
-    
-    void Awake()
-    {
+
+    void Awake() {
         _view = GetComponent<PhotonView>();
 
 
@@ -24,9 +23,21 @@ public class Server : MonoBehaviourPun {
                 _view.RPC("SetReferenceToSelf", RpcTarget.AllBuffered, PhotonNetwork.LocalPlayer);  //Buffered: todos los que se conecten tarde reciben este mensaje
             }
 
-        }
-        else {
+        } else {
             PhotonNetwork.Destroy(gameObject);  //Me destrushe
+        }
+
+    }
+    private void Update() {
+        if ( !_view.IsMine ) return;
+        if ( inGame == false ) {
+            int max = PhotonNetwork.CurrentRoom.MaxPlayers;
+            int curr = PhotonNetwork.CurrentRoom.PlayerCount;
+            if ( max == curr ) {
+                inGame = true;
+                PhotonNetwork.Instantiate("TheLine", Vector3.zero + Vector3.up / 2, Quaternion.identity);
+            }
+            return;
         }
 
     }
@@ -41,7 +52,7 @@ public class Server : MonoBehaviourPun {
         {
             _view.RPC("AddPlayer", server, PhotonNetwork.LocalPlayer);//Flasheaste, te agrego un player
         }
-            
+
     }
 
     [PunRPC]
@@ -52,6 +63,7 @@ public class Server : MonoBehaviourPun {
         var newPlayer = PhotonNetwork.Instantiate("Assembler", Vector3.right * p.ActorNumber * 2 + Vector3.up,
                         Quaternion.identity).GetComponent<Assembler>();
         assemblers.Add(p, newPlayer);
+        //Aca inicias el tiempo
         foreach ( var item in assemblers ) {
             Debug.Log(item);
         }
@@ -60,115 +72,61 @@ public class Server : MonoBehaviourPun {
     //Los Ask son rpc
 
     [PunRPC]
-    public void AskAssemblerToMoveHorizontal(Vector3 dir,Player p ) {
-        if ( _view.IsMine ) {
-            return;
-        }
+    public void AskAssemblerToMoveHorizontal( Vector3 dir, Player p ) {
+        if ( !_view.IsMine ) return;
         if ( assemblers.ContainsKey(p) ) {
             assemblers [ p ].MoveHorizontal(dir);
         }
     }
     [PunRPC]
     public void AskAssemblerToMoveVertical( Vector3 dir, Player p ) {
-        Debug.Log("movingvertical1");
 
-        Debug.Log(assemblers.ContainsKey(p));
-        if ( _view.IsMine ) {
-            return;
-        }
-        Debug.Log("movingvertical2");
+        if ( !_view.IsMine ) return;
         if ( assemblers.ContainsKey(p) ) {
-            Debug.Log("movingvertical3");
             assemblers [ p ].MoveVertical(dir);
         }
     }
     [PunRPC]
-    public void AskAssemblerToGrab(Player p ) {
-        if ( _view.IsMine ) {
-            return;
-        }
+    public void AskAssemblerToGrab( Player p ) {
+        if ( !_view.IsMine ) return;
+
         if ( assemblers.ContainsKey(p) ) {
-            Debug.Log("grabbin");
-            assemblers [ p ].Grab();
+            Debug.Log("foundtheassembler");
+            if ( assemblers [ p ].isGrabbin == false ) {
+                Debug.Log("isfalse");
+
+                RaycastHit hit;
+                if ( Physics.Raycast(assemblers [ p ].transform.position, assemblers [ p ].transform.forward, out hit, 100, assemblers [ p ].layers) ) {
+
+                    Debug.Log("found");
+                    Transform grabbb = PhotonNetwork.Instantiate("Sphere", assemblers [ p ].transform.position + assemblers [ p ].transform.forward, Quaternion.identity).transform;
+                    //aca tengo que darselo a todos los chikes para que lo encuentren y lo agarren
+                    TellToGrab(grabbb,p);
+                }
+            } else {
+                TellToGrab(null,p);
+            }
+
         }
-
-
     }
-    /*
-
-[PunRPC]
-void AskNewTetraIndex( Player p, int r ) {
-    if ( _view.IsMine ) {
-        return;
+    [PunRPC]
+    void AskToGrabThis( Transform t, Player p ) {
+        if ( assemblers.ContainsKey(p) ) {
+            assemblers [ p ].grabbed = t;
+            assemblers [ p ].isGrabbin = t;
+        }
     }
-    if ( assemblers.ContainsKey(p) ) {
-        assemblers [ p ].NewTetraIndex(r);
-    }
-}
-
-[PunRPC]
-void AskNewTetra( Player p ) {
-    if ( _view.IsMine ) return;
-    if ( assemblers.ContainsKey(p) ) {
-        assemblers [ p ].NewTetra();
-    }
-}
-
-[PunRPC]
-void AskFactoryPosition(Player p) {
-    if ( _view.IsMine ) return;
-
-    if ( assemblers.ContainsKey(p) ) {
-        assemblers [ p ].SetStartPosition();
-    }
-
-}
-*/
-
-    //Los request no son rpc
-    public void PlayerRequestToMoveHorizontal(Vector3 dir,Player p ) {
+        //Los request no son rpc
+        public void PlayerRequestToMoveHorizontal(Vector3 dir,Player p ) {
         _view.RPC("AskAssemblerToMoveHorizontal", server, dir, p);
     }
     public void PlayerRequestToMoveVertical( Vector3 dir, Player p ) {
         _view.RPC("AskAssemblerToMoveVertical", server, dir, p);
     }
     public void PlayerRequestToGrab(Player p ) {
-        _view.RPC("AskAssemblerToMoveVertical", server, p);
+        _view.RPC("AskAssemblerToGrab", server, p);
     }
-
-
-
-
-
-
-
-    public void ManagerRequestNewTetraIndex( Player p ) {
-        int r = Random.Range(0, 7);
-        _view.RPC("AskNewTetraIndex", server, p, r);
+    public void TellToGrab(Transform t ,Player p) {
+        _view.RPC("AskToGrabThis", server, t,p);
     }
-    public void ManagerRequestNewTetra( Player p ) {
-        _view.RPC("AskNewTetra", server, p);            //CREO
-    }
-    public void PlayerRequestMoveTetraSide(Vector3 dir, Player p ) {
-        _view.RPC("AsktoMoveTetraSide", server, dir, p);
-    }
-    public void ManagerRequestFactotyPosition( Player p ) {
-        _view.RPC("AskFactoryPosition", server, p);
-    }
-    public void ManagerRequestToStart( Player p ) {
-        _view.RPC("AskFactoryPosition", p, p);
-        _view.RPC("AskFactoryPosition", server, p);
-        _view.RPC("AskFactoryPosition", RpcTarget.All, p);
-
-        /*
-        int r = Random.Range(0, 7);
-        _view.RPC("AskNewTetraIndex", p, p, r);
-        _view.RPC("AskNewTetra", p, p);            //CREO
-        _view.RPC("AskNewTetraIndex", RpcTarget.All, p, r);
-        _view.RPC("AskNewTetra", RpcTarget.All, p);            //CREO
-        */
-
-
-    }
-
 }

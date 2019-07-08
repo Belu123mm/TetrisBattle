@@ -113,7 +113,7 @@ public class StartMenu : MonoBehaviourPunCallbacks {    //Todo esto se ejecuta l
 
                 if ( !isServerOn ) {
                     isServerOn = true;
-                    PhotonNetwork.Instantiate("Server", Vector3.right * 2, Quaternion.identity);
+                    PhotonNetwork.Instantiate("Server", Vector3.zero, Quaternion.identity);
                     return;
                 }
             } else {

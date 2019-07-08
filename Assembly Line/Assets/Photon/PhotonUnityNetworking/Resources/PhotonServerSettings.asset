@@ -37,5 +37,8 @@ MonoBehaviour:
   - AskAssemblerToMoveHorizontal
   - AskAssemblerToMoveVertical
   - AskAssemblerToGrab
+  - AskServerToGrab
+  - AskAssemblerToFalse
+  - AskToGrabThis
   DisableAutoOpenWizard: 1
-  ShowSettings: 1
+  ShowSettings: 0
