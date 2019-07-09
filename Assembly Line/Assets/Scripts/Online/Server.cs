@@ -12,7 +12,10 @@ public class Server : MonoBehaviourPun {
     PhotonView _view;
     public Player server;
     public bool inGame = false;
+    public Vector3 robotsPosition;
     // Start is called before the first frame update
+    public Robot client;
+    public int level = 1;
 
     void Awake() {
         _view = GetComponent<PhotonView>();
@@ -35,9 +38,20 @@ public class Server : MonoBehaviourPun {
             int curr = PhotonNetwork.CurrentRoom.PlayerCount;
             if ( max == curr ) {
                 inGame = true;
-                PhotonNetwork.Instantiate("TheLine", Vector3.zero + Vector3.up / 2, Quaternion.identity);
             }
             return;
+        }
+        if ( !client ) {
+            int r = Random.Range(0, 5);
+            if ( r == 4 ) {
+                int robotid = PhotonNetwork.Instantiate("RoboSphere", robotsPosition, Quaternion.identity).GetComponent<PhotonView>().ViewID;
+                int o = Mathf.RoundToInt(level * 0.25f);
+                int c = Mathf.RoundToInt(level * 0.80f);
+                int g = Mathf.RoundToInt(level * 0.60f);
+                int l = Mathf.RoundToInt(level * 1.25f);
+                _view.RPC("AskToFindRoboSphere",RpcTarget.All,robotid,o,c,g,l);
+
+            }
         }
 
     }
@@ -92,41 +106,96 @@ public class Server : MonoBehaviourPun {
 
         if ( assemblers.ContainsKey(p) ) {
             Debug.Log("foundtheassembler");
+            int assembler = assemblers [ p ].photonView.ViewID;
             if ( assemblers [ p ].isGrabbin == false ) {
                 Debug.Log("isfalse");
 
                 RaycastHit hit;
-                if ( Physics.Raycast(assemblers [ p ].transform.position, assemblers [ p ].transform.forward, out hit, 100, assemblers [ p ].layers) ) {
+                if ( Physics.Raycast(assemblers [ p ].transform.position, assemblers [ p ].transform.forward, out hit, 100, assemblers [ p ].gearsVM) ) {
 
                     Debug.Log("found");
-                    Transform grabbb = PhotonNetwork.Instantiate("Sphere", assemblers [ p ].transform.position + assemblers [ p ].transform.forward, Quaternion.identity).transform;
+                    int grabbb = PhotonNetwork.Instantiate("Gear", assemblers [ p ].transform.position + assemblers [ p ].transform.forward, Quaternion.identity).GetComponent<PhotonView>().ViewID;
                     //aca tengo que darselo a todos los chikes para que lo encuentren y lo agarren
-                    TellToGrab(grabbb,p);
+                    _view.RPC("AskToGrabThis", RpcTarget.All, grabbb, assembler);
                 }
+                if ( Physics.Raycast(assemblers [ p ].transform.position, assemblers [ p ].transform.forward, out hit, 100, assemblers [ p ].oilVM) ) {
+
+                    Debug.Log("found");
+                    int grabbb = PhotonNetwork.Instantiate("Oil", assemblers [ p ].transform.position + assemblers [ p ].transform.forward, Quaternion.identity).GetComponent<PhotonView>().ViewID;
+                    //aca tengo que darselo a todos los chikes para que lo encuentren y lo agarren
+                    _view.RPC("AskToGrabThis", RpcTarget.All, grabbb, assembler);
+                }
+                if ( Physics.Raycast(assemblers [ p ].transform.position, assemblers [ p ].transform.forward, out hit, 100, assemblers [ p ].chipVM) ) {
+
+                    Debug.Log("found");
+                    int grabbb = PhotonNetwork.Instantiate("Chip", assemblers [ p ].transform.position + assemblers [ p ].transform.forward, Quaternion.identity).GetComponent<PhotonView>().ViewID;
+                    //aca tengo que darselo a todos los chikes para que lo encuentren y lo agarren
+                    _view.RPC("AskToGrabThis", RpcTarget.All, grabbb, assembler);
+                }
+                if ( Physics.Raycast(assemblers [ p ].transform.position, assemblers [ p ].transform.forward, out hit, 100, assemblers [ p ].lightsVM) ) {
+
+                    Debug.Log("found");
+                    int grabbb = PhotonNetwork.Instantiate("Lights", assemblers [ p ].transform.position + assemblers [ p ].transform.forward, Quaternion.identity).GetComponent<PhotonView>().ViewID;
+                    //aca tengo que darselo a todos los chikes para que lo encuentren y lo agarren
+                    _view.RPC("AskToGrabThis", RpcTarget.All, grabbb, assembler);
+                }
+
+
             } else {
-                TellToGrab(null,p);
+                _view.RPC("AskToGrabThis", RpcTarget.All, 0, assembler);
             }
 
         }
     }
     [PunRPC]
-    void AskToGrabThis( Transform t, Player p ) {
-        if ( assemblers.ContainsKey(p) ) {
-            assemblers [ p ].grabbed = t;
-            assemblers [ p ].isGrabbin = t;
+    void AskToGrabThis( int itemid, int assemblerid) {
+        Assembler a = PhotonView.Find(assemblerid).GetComponent<Assembler>();
+        if ( itemid != 0 ) {
+
+            a.grabbed = PhotonView.Find(itemid).GetComponent<Transform>();
+            a.isGrabbin = true;
+
+        } else {
+            a.isGrabbin = false;
         }
     }
-        //Los request no son rpc
-        public void PlayerRequestToMoveHorizontal(Vector3 dir,Player p ) {
+    [PunRPC]
+    void AskToAnimAssembler(Player p) {
+        if ( !_view.IsMine ) return;
+
+        if ( assemblers.ContainsKey(p) )
+            assemblers [ p ].SetMoving(true);
+    }
+    [PunRPC]
+    void AskToStopAnim( Player p ) {
+        if ( !_view.IsMine ) return;
+
+        if ( assemblers.ContainsKey(p) )
+            assemblers [ p ].SetMoving(false);
+    }
+    void AskToFindRoboSphere(int roboid ,int oil, int chip,int gear, int lights) {
+        client = PhotonView.Find(roboid).GetComponent<Robot>();
+        client.oilCant = oil;
+        client.chipCant = chip;
+        client.gearCant = gear;
+        client.lightsCant = lights;
+    }
+
+    //Los request no son rpc
+    public void PlayerRequestToMoveHorizontal(Vector3 dir,Player p ) {
         _view.RPC("AskAssemblerToMoveHorizontal", server, dir, p);
+        _view.RPC("AskToAnimAssembler", RpcTarget.All, p);
     }
     public void PlayerRequestToMoveVertical( Vector3 dir, Player p ) {
         _view.RPC("AskAssemblerToMoveVertical", server, dir, p);
+        _view.RPC("AskToAnimAssembler", RpcTarget.All, p);
     }
     public void PlayerRequestToGrab(Player p ) {
         _view.RPC("AskAssemblerToGrab", server, p);
     }
-    public void TellToGrab(Transform t ,Player p) {
-        _view.RPC("AskToGrabThis", server, t,p);
+    public void PlayerRequestToStopAnim( Player p ) {
+        _view.RPC("AskToStopAnim", RpcTarget.All, p);
     }
+
+
 }
