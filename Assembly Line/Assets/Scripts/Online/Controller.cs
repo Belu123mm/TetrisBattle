@@ -18,7 +18,6 @@ public class Controller : MonoBehaviourPun {
         if ( Input.GetButton("Horizontal") ) {
             _horHasStopped = false;
             _animHastStopped = false;
-            Debug.Log("mandando para mover");
             Server.Instance.PlayerRequestToMoveHorizontal(Vector3.right * Input.GetAxis("Horizontal"), PhotonNetwork.LocalPlayer);
         } else {
             _horHasStopped = true;
@@ -28,7 +27,6 @@ public class Controller : MonoBehaviourPun {
         if ( Input.GetButton("Vertical") ) {
             _verHasStopped = false;
             _animHastStopped = false;
-            Debug.Log("mandando para mover");
             Server.Instance.PlayerRequestToMoveVertical(Vector3.forward * Input.GetAxis("Vertical"), PhotonNetwork.LocalPlayer);
         } else {
             _verHasStopped = true;

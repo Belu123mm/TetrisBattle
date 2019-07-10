@@ -5,6 +5,7 @@ using Photon;
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 public class Server : MonoBehaviourPun {
     public static Server Instance { get; private set; } //El private es para que no te hackeen y que lo seteen(xd) de otro lado 
@@ -16,6 +17,9 @@ public class Server : MonoBehaviourPun {
     // Start is called before the first frame update
     public Robot client;
     public int level = 1;
+    public TMP_Text lifeText;
+    public int life;
+    public int maxLevel;
 
     void Awake() {
         _view = GetComponent<PhotonView>();
@@ -32,6 +36,8 @@ public class Server : MonoBehaviourPun {
 
     }
     private void Update() {
+        lifeText.text = life.ToString();
+
         if ( !_view.IsMine ) return;
         if ( inGame == false ) {
             int max = PhotonNetwork.CurrentRoom.MaxPlayers;
@@ -41,7 +47,7 @@ public class Server : MonoBehaviourPun {
             }
             return;
         }
-        if ( !client ) {
+        if ( client == null ) {
             int r = Random.Range(0, 5);
             if ( r == 4 ) {
                 int robotid = PhotonNetwork.Instantiate("RoboSphere", robotsPosition, Quaternion.identity).GetComponent<PhotonView>().ViewID;
@@ -49,7 +55,7 @@ public class Server : MonoBehaviourPun {
                 int c = Mathf.RoundToInt(level * 0.80f);
                 int g = Mathf.RoundToInt(level * 0.60f);
                 int l = Mathf.RoundToInt(level * 1.25f);
-                _view.RPC("AskToFindRoboSphere",RpcTarget.All,robotid,o,c,g,l);
+                _view.RPC("AskToFindRoboSphere", RpcTarget.All, robotid, o, c, g, l);
 
             }
         }
@@ -74,13 +80,10 @@ public class Server : MonoBehaviourPun {
 
         if ( !_view.IsMine )
             return;     //Wat is dis?
-        var newPlayer = PhotonNetwork.Instantiate("Assembler", Vector3.right * p.ActorNumber * 2 + Vector3.up,
+        var newPlayer = PhotonNetwork.Instantiate("Assembler", Vector3.left * p.ActorNumber * 2 ,
                         Quaternion.identity).GetComponent<Assembler>();
         assemblers.Add(p, newPlayer);
         //Aca inicias el tiempo
-        foreach ( var item in assemblers ) {
-            Debug.Log(item);
-        }
     }
 
     //Los Ask son rpc
@@ -105,36 +108,30 @@ public class Server : MonoBehaviourPun {
         if ( !_view.IsMine ) return;
 
         if ( assemblers.ContainsKey(p) ) {
-            Debug.Log("foundtheassembler");
             int assembler = assemblers [ p ].photonView.ViewID;
             if ( assemblers [ p ].isGrabbin == false ) {
-                Debug.Log("isfalse");
 
                 RaycastHit hit;
-                if ( Physics.Raycast(assemblers [ p ].transform.position, assemblers [ p ].transform.forward, out hit, 100, assemblers [ p ].gearsVM) ) {
+                if ( Physics.Raycast(assemblers [ p ].transform.position + Vector3.up, assemblers [ p ].transform.forward, out hit, 10, assemblers [ p ].gearsVM) ) {
 
-                    Debug.Log("found");
                     int grabbb = PhotonNetwork.Instantiate("Gear", assemblers [ p ].transform.position + assemblers [ p ].transform.forward, Quaternion.identity).GetComponent<PhotonView>().ViewID;
                     //aca tengo que darselo a todos los chikes para que lo encuentren y lo agarren
                     _view.RPC("AskToGrabThis", RpcTarget.All, grabbb, assembler);
                 }
-                if ( Physics.Raycast(assemblers [ p ].transform.position, assemblers [ p ].transform.forward, out hit, 100, assemblers [ p ].oilVM) ) {
+                if ( Physics.Raycast(assemblers [ p ].transform.position + Vector3.up, assemblers [ p ].transform.forward, out hit, 10, assemblers [ p ].oilVM) ) {
 
-                    Debug.Log("found");
                     int grabbb = PhotonNetwork.Instantiate("Oil", assemblers [ p ].transform.position + assemblers [ p ].transform.forward, Quaternion.identity).GetComponent<PhotonView>().ViewID;
                     //aca tengo que darselo a todos los chikes para que lo encuentren y lo agarren
                     _view.RPC("AskToGrabThis", RpcTarget.All, grabbb, assembler);
                 }
-                if ( Physics.Raycast(assemblers [ p ].transform.position, assemblers [ p ].transform.forward, out hit, 100, assemblers [ p ].chipVM) ) {
+                if ( Physics.Raycast(assemblers [ p ].transform.position + Vector3.up, assemblers [ p ].transform.forward, out hit, 10, assemblers [ p ].chipVM) ) {
 
-                    Debug.Log("found");
                     int grabbb = PhotonNetwork.Instantiate("Chip", assemblers [ p ].transform.position + assemblers [ p ].transform.forward, Quaternion.identity).GetComponent<PhotonView>().ViewID;
                     //aca tengo que darselo a todos los chikes para que lo encuentren y lo agarren
                     _view.RPC("AskToGrabThis", RpcTarget.All, grabbb, assembler);
                 }
-                if ( Physics.Raycast(assemblers [ p ].transform.position, assemblers [ p ].transform.forward, out hit, 100, assemblers [ p ].lightsVM) ) {
+                if ( Physics.Raycast(assemblers [ p ].transform.position + Vector3.up, assemblers [ p ].transform.forward, out hit, 10, assemblers [ p ].lightsVM) ) {
 
-                    Debug.Log("found");
                     int grabbb = PhotonNetwork.Instantiate("Lights", assemblers [ p ].transform.position + assemblers [ p ].transform.forward, Quaternion.identity).GetComponent<PhotonView>().ViewID;
                     //aca tengo que darselo a todos los chikes para que lo encuentren y lo agarren
                     _view.RPC("AskToGrabThis", RpcTarget.All, grabbb, assembler);
@@ -173,12 +170,53 @@ public class Server : MonoBehaviourPun {
         if ( assemblers.ContainsKey(p) )
             assemblers [ p ].SetMoving(false);
     }
+    [PunRPC]
     void AskToFindRoboSphere(int roboid ,int oil, int chip,int gear, int lights) {
         client = PhotonView.Find(roboid).GetComponent<Robot>();
         client.oilCant = oil;
         client.chipCant = chip;
         client.gearCant = gear;
         client.lightsCant = lights;
+    }
+    [PunRPC]
+    void AskRobotToDeploy() {
+        client._anim.SetBool("isLeaving", true);
+        if ( !_view.IsMine ) return;
+        client.Deploy();
+    }
+    [PunRPC]
+    void LessLife() {
+        life--;
+        if ( !_view.IsMine ) return;
+        if ( life == 0 ) {
+            PhotonNetwork.LoadLevel("Lose");
+            PhotonNetwork.Disconnect();
+        }
+    }
+    [PunRPC]
+    void LessOil() {
+        client.oilCant--;
+    }
+    [PunRPC]
+    void LessGears() {
+        client.gearCant--;
+    }
+    [PunRPC]
+    void LessLights() {
+        client.lightsCant--;
+    }
+    [PunRPC]
+    void LessChips() {
+        client.chipCant--;
+    }
+    [PunRPC]
+    void LevelUp() {
+        level++;
+        if ( !_view.IsMine ) return;
+        if ( level == maxLevel ) {
+            PhotonNetwork.LoadLevel("Win");
+            PhotonNetwork.Disconnect();
+        }
     }
 
     //Los request no son rpc
@@ -196,6 +234,55 @@ public class Server : MonoBehaviourPun {
     public void PlayerRequestToStopAnim( Player p ) {
         _view.RPC("AskToStopAnim", RpcTarget.All, p);
     }
+    public void RobotRequestToChangeRobot() {
+        _view.RPC("LevelUp", RpcTarget.All);
+        _view.RPC("AskRobotToDeploy", RpcTarget.All);
+    }
 
 
+
+    public void OnTriggerEnter( Collider other ) {
+        if ( !_view.IsMine ) return;
+
+        if ( other.CompareTag("oil")){
+            PhotonNetwork.Destroy(other.GetComponent<PhotonView>());
+            if ( client.oilCant == 0 ) {
+                _view.RPC("AskRobotToDeploy", RpcTarget.All);
+                _view.RPC("LessLife", RpcTarget.All);
+                return;
+            }
+            _view.RPC("LessOil", RpcTarget.All);
+        }
+
+        if ( other.CompareTag("gear") ) {
+            PhotonNetwork.Destroy(other.GetComponent<PhotonView>());
+            if ( client.gearCant == 0 ) {
+                _view.RPC("AskRobotToDeploy", RpcTarget.All);
+                _view.RPC("LessLife", RpcTarget.All);
+                return;
+            }
+            _view.RPC("LessGears", RpcTarget.All);
+        }
+
+        if ( other.CompareTag("chip") ) {
+            PhotonNetwork.Destroy(other.GetComponent<PhotonView>());
+            if ( client.chipCant == 0 ) {
+                _view.RPC("AskRobotToDeploy", RpcTarget.All);
+                _view.RPC("LessLife", RpcTarget.All);
+                return;
+            }
+            _view.RPC("LessChips", RpcTarget.All);
+        }
+
+        if ( other.CompareTag("lights") ) {
+            PhotonNetwork.Destroy(other.GetComponent<PhotonView>());
+            if ( client.lightsCant == 0 ) {
+                _view.RPC("AskRobotToDeploy", RpcTarget.All);
+                _view.RPC("LessLife", RpcTarget.All);
+                return;
+            }
+            _view.RPC("LessLights", RpcTarget.All);
+        }
+
+    }
 }

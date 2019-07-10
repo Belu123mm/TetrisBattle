@@ -42,5 +42,13 @@ MonoBehaviour:
   - AskToGrabThis
   - AskToAnimAssembler
   - AskToStopAnim
+  - AskToFindRoboSphere
+  - AskRobotToDeploy
+  - LessChips
+  - LessGears
+  - LessLife
+  - LessLights
+  - LessOil
+  - LevelUp
   DisableAutoOpenWizard: 1
   ShowSettings: 0

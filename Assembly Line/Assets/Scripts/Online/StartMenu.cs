@@ -29,8 +29,6 @@ public class StartMenu : MonoBehaviourPunCallbacks {    //Todo esto se ejecuta l
     }
 
     public void Disconnect() {
-        
-        Debug.Log("disconectto" + playerCount);
         PhotonNetwork.Disconnect();
     }
 
@@ -41,7 +39,7 @@ public class StartMenu : MonoBehaviourPunCallbacks {    //Todo esto se ejecuta l
 
     }
     public override void OnConnectedToMaster() {
-        conectionState.text = "CONECTADO AL SERVER";
+        conectionState.text = "Connecting to Server";
         PhotonNetwork.JoinLobby(TypedLobby.Default);
     }
 
@@ -51,7 +49,7 @@ public class StartMenu : MonoBehaviourPunCallbacks {    //Todo esto se ejecuta l
 
     public override void OnJoinedLobby() {
         PhotonNetwork.AutomaticallySyncScene = true;
-        conectionState.text = "EN EL LOBBY";
+        conectionState.text = "In Lobby";
 
         byte b = 0;
         if ( dropdown.value == 0 ) b = 3;
@@ -68,24 +66,20 @@ public class StartMenu : MonoBehaviourPunCallbacks {    //Todo esto se ejecuta l
         PhotonNetwork.JoinRandomRoom();
 
         }
-        //recien cuando hay gente los tiras a la room?
-
-
-
     }
 
     public override void OnJoinedRoom() {
-        conectionState.text = "EN LA HABITACION";
+        conectionState.text = "In room";
 
     }
 
     public override void OnJoinRandomFailed( short returnCode, string message ) {
-        conectionState.text = "FALLO POR QUE " + message;
+        conectionState.text = "Failed. Cause: " + message;
         PhotonNetwork.Disconnect();
     }
 
     public override void OnCreatedRoom() {
-        conectionState.text = "CREO UNA HABITACION";
+        conectionState.text = "Room created";
     }
     private void Update() {
         //Esto es para cambiar de escena y spawnear los players

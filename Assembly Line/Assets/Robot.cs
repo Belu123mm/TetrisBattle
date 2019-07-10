@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
-
+using TMPro;
 public class Robot : MonoBehaviourPun
 {
     public int oilCant;
@@ -16,7 +16,25 @@ public class Robot : MonoBehaviourPun
     public GameObject chips;
     public GameObject lights;
 
+    public TMP_Text oilText;
+    public TMP_Text gearsText;
+    public TMP_Text chipsText;
+    public TMP_Text lightsText;
+
+    public Animator _anim;
+
+    bool deployed = false;
+    PhotonView _view;
+
+    public void Awake() {
+        _view = GetComponent<PhotonView>();
+    }
     public void Update() {
+        oilText.text = oilCant.ToString();
+        gearsText.text = gearCant.ToString();
+        chipsText.text = chipCant.ToString();
+        lightsText.text = lightsCant.ToString();
+
         if (oilCant == 0 ) {
             oil.SetActive(false);
         }
@@ -30,10 +48,23 @@ public class Robot : MonoBehaviourPun
             chips.SetActive(false);
         }
 
-        if (oilCant == 0 && lightsCant == 0 && gearCant == 0 && chipCant == 0 ) {
-            //nosvamos
+        if ( !_view.IsMine ) return;
+        if (oilCant == 0 && lightsCant == 0 && gearCant == 0 && chipCant == 0 && deployed == false) {
+            deployed = true;
+            Server.Instance.RobotRequestToChangeRobot();
         }
 
     }
+
+    public void Deploy() {
+        StartCoroutine(Deploying());
+    }
+
+    IEnumerator Deploying() {
+        Debug.Log("BURRANDO");
+        yield return new WaitForSeconds(2);
+        PhotonNetwork.Destroy(this.gameObject);
+    }
+
 
 }
